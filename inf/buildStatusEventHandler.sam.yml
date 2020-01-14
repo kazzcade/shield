@@ -12,7 +12,7 @@ Resources:
     Properties:
       Runtime: go1.x
       Handler: cloudWatchBuildEvent
-      CodeUri: bin
+      CodeUri: ../bin
       MemorySize: 128
       Timeout: 30
       Policies:
