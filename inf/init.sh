@@ -12,7 +12,7 @@ for filename in ./*.yml; do
     fi
 done
 
-GitToken="5a27741a246972bb2423c8888792a008ae9cf5ad"
+GitToken="b0ef08fc795203cf061d11c648142d061eea3707"
 GitSecret="f5235a735d9879710276a41eeb405b6d06c365b5"
 GitBranch=`git branch | grep \* | cut -d ' ' -f2`
 GitRepo=`git rev-parse --show-toplevel | rev | cut -d/ -f1 | rev`
@@ -20,7 +20,7 @@ GitOwner='kazzcade'
 ## some resource require lowercase so please no uppercase
 BaseStackName=`echo "$GitRepo-$GitBranch" | tr '[:upper:]' '[:lower:]'`
 PipelineStackName=$BaseStackName-pipeline
-#Bucket=$BaseStackName-artifacts
+Bucket=$BaseStackName-artifacts
 
 ## profile
 read -p "AWS Profile (default): " profile
@@ -44,6 +44,7 @@ aws cloudformation deploy \
 --capabilities CAPABILITY_NAMED_IAM \
 --stack-name $PipelineStackName \
 --parameter-overrides \
+BucketName=$Bucket \
 GitRepo=$GitRepo \
 GitBranch=$GitBranch \
 GitSecret=$GitSecret \

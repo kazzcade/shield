@@ -14,7 +14,6 @@ Parameters:
     Type: String
   BucketName:
     Type: String
-    Default: artifacts
   ShieldKey:
     Type: String
     Default: shields
@@ -24,7 +23,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      BucketName: !Sub ${AWS::StackName}-${BucketName}
+      BucketName: !Ref BucketName
 
   ShieldBucketPolicy: 
     Type: AWS::S3::BucketPolicy
@@ -237,7 +236,7 @@ Resources:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: inf/builds/BuildStatusEventHandler.yml
+        BuildSpec: inf/builds/buildStatusEventHandler.yml
 
 
   # Setup the webhook to keep track of changes
