@@ -5,7 +5,7 @@ Parameters:
     Type: String
   Key:
     Type: String
-    Default: shield
+    Default: shields
 Resources:
   SyncRecords:
     Type: AWS::Serverless::Function

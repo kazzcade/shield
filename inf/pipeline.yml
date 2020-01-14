@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: SFSync pipeline
+Description: code build shield pipeline
 
 Parameters:
   GitRepo:
@@ -14,9 +14,10 @@ Parameters:
     Type: String
   BucketName:
     Type: String
+    Default: artifacts
   ShieldKey:
     Type: String
-    Default: shield
+    Default: shields
 # Setup s3 Bucket where we keep our source
 Resources:
   Bucket:
@@ -29,13 +30,20 @@ Resources:
     Type: AWS::S3::BucketPolicy
     Properties: 
       Bucket: !Ref Bucket
-      PolicyDocument: 
+      PolicyDocument:
         Statement:
-          - Effect: Allow
-        Action:
-          - s3:GetObject
-        Resource: !Sub ${Bucket}/shields/*
-
+          - Action: 
+            - "s3:GetObject"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                - 
+                  - "arn:aws:s3:::"
+                  - 
+                    Ref: Bucket
+                  - "/shields/*"
+            Principal: "*"
   # role that executes the pipeline process
   PipelineRole:
     Type: AWS::IAM::Role
@@ -92,6 +100,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - codebuild:*
+                  - logs:*
                 Resource: "*"
               - Effect: Allow
                 Action:
@@ -100,7 +109,7 @@ Resources:
                   - ${Bucket}/*
                   - { Bucket: !GetAtt Bucket.Arn }
 
-  BuildStatusEventHandlerDeploy:
+  BuildStatusEventHandlerDeployRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${AWS::StackName}-BuildStatusEventHandlerDeployRole
@@ -138,9 +147,9 @@ Resources:
       Name: !Sub ${AWS::StackName}
       RestartExecutionOnUpdate: true
       RoleArn: !GetAtt PipelineRole.Arn
-      ArtifactBucket:
+      ArtifactStore:
         Type: S3
-        Location: !Ref BucketName
+        Location: !Ref Bucket
       # Get the source
       Stages:
         - Name: Source
@@ -170,49 +179,47 @@ Resources:
                 Provider: CodeBuild
                 Version: 1
               Configuration:
-                ProjectName: !Ref BuildStatusEventHandler
-              InputArtifact:
+                ProjectName: !Ref BuildStatusEventHandlerCodeBuild
+              InputArtifacts:
                 - Name: source
-              OutputArtifact:
+              OutputArtifacts:
                 - Name: statusEventHandler
-        - Name: Deploy
-          Actions:
-            - Name: BuildStatusEventHandler
-              RunOrder: 1
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: CloudFormation
-                Version: 1
-              Configuration:
-                Action: CREATE_UPDATE
-                StackName: !Sub ${AWS::StackName}-StatusEventHandler
-                Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
-                RoleArn: !GetAtt BuildStatusEventHandlerDeploy.Arn
-                ParameterOverrides: 
-                  Fn::Sub:
-                    - '{"Bucket":"${LogLevel}", "Key": "${Key}"}'
-                    - Bucket: !Ref BucketName
-                      Key: !Ref ShieldKey
-              InputArtifacts:
-                - Name: statusEventHandler
-            - Name: BuildStatusAssets
-              RunOrder: 1
-              ActionTypeId:
-                Category: Deploy
-                Owner: AWS
-                Provider: S3
-                Version: 1
-              Configuration:
-                S3Bucket: !Ref Bucket
-                Extract: false
-                ObjectKey: ShieldKey
+        # - Name: Deploy
+        #   Actions:
+        #     - Name: BuildStatusEventHandler
+        #       RunOrder: 1
+        #       ActionTypeId:
+        #         Category: Deploy
+        #         Owner: AWS
+        #         Provider: CloudFormation
+        #         Version: 1
+        #       Configuration:
+        #         Action: CREATE_UPDATE
+        #         StackName: !Sub ${AWS::StackName}-StatusEventHandler
+        #         Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
+        #         RoleArn: !GetAtt BuildStatusEventHandlerDeployRole.Arn
+        #         ParameterOverrides: 
+        #           Fn::Sub:
+        #             - '{"Bucket":"${Bucket}", "Key": "${Key}"}'
+        #             - Bucket: !Ref BucketName
+        #               Key: !Ref ShieldKey
+        #       InputArtifacts:
+        #         - Name: statusEventHandler
+        #     - Name: BuildStatusAssets
+        #       RunOrder: 1
+        #       ActionTypeId:
+        #         Category: Deploy
+        #         Owner: AWS
+        #         Provider: S3
+        #         Version: 1
+        #       Configuration:
+        #         S3Bucket: !Ref Bucket
+        #         Extract: false
+        #         ObjectKey: ShieldKey
+        #       InputArtifacts:
+        #         - Name: source
 
-
-              InputArtifacts:
-                - Name: source::shields
-
-  BuildStatusEventHandler:
+  BuildStatusEventHandlerCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Sub ${AWS::StackName}-BuildStatusEventHandler
