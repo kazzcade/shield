@@ -8,9 +8,6 @@ phases:
   install:
     runtime-versions:
       golang: 1.13
-  pre_build:
-    commands:
-      - cd sync
   build:
     commands:
       - export GOARCH=amd64
@@ -18,7 +15,7 @@ phases:
       - make build
   post_build:
     commands:
-      - aws cloudformation package --template-file ./inf/buildStatusEventHandler.sam.yml --s3-bucket $BUCKET --output-template-file deployStatusEventHandler.ylm
+      - aws cloudformation package --template-file ./inf/buildStatusEventHandler.sam.yml --s3-bucket $BUCKET --output-template-file deployStatusEventHandler.yml
 artifacts:
   files:
     - deployStatusEventHandler.yml

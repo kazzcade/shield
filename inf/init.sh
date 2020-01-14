@@ -12,7 +12,7 @@ for filename in ./*.yml; do
     fi
 done
 
-GitToken="b0ef08fc795203cf061d11c648142d061eea3707"
+GitToken="b0432b51f592028c7f48a0142ab305fd117ac319"
 GitSecret="f5235a735d9879710276a41eeb405b6d06c365b5"
 GitBranch=`git branch | grep \* | cut -d ' ' -f2`
 GitRepo=`git rev-parse --show-toplevel | rev | cut -d/ -f1 | rev`
