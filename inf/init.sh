@@ -18,8 +18,7 @@ GitRepo=`git rev-parse --show-toplevel | rev | cut -d/ -f1 | rev`
 GitOwner='kazzcade'
 ## some resource require lowercase so please no uppercase
 BaseStackName=`echo "$GitRepo-$GitBranch" | tr '[:upper:]' '[:lower:]'`
-PipelineStackName=$BaseStackName-pipeline
-Bucket=$BaseStackName-artifacts
+PipelineStackName=$BaseStackName
 
 ## profile
 read -p "AWS Profile (default): " profile
@@ -35,7 +34,6 @@ echo Branch - $GitBranch
 echo Repo - $GitRepo
 echo Owner - $GitOwner
 echo PipelineStackName - $PipelineStackName
-echo Bucket - $Bucket
 
 aws cloudformation deploy \
 --profile $profile \
@@ -43,7 +41,6 @@ aws cloudformation deploy \
 --capabilities CAPABILITY_NAMED_IAM \
 --stack-name $PipelineStackName \
 --parameter-overrides \
-BucketName=$Bucket \
 GitRepo=$GitRepo \
 GitBranch=$GitBranch \
 GitSecret=$GitSecret \

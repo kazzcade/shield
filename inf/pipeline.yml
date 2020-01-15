@@ -12,6 +12,7 @@ Parameters:
     Type: String
   BucketName:
     Type: String
+    Default: artifacts
   ShieldKey:
     Type: String
     Default: shields
@@ -21,7 +22,7 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       AccessControl: Private
-      BucketName: !Ref BucketName
+      BucketName: !Sub ${AWS::StackName}-${BucketName}
 
   ShieldBucketPolicy: 
     Type: AWS::S3::BucketPolicy
@@ -126,7 +127,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - coudformation:*
+                  - cloudformation:*
                   - logs:*
                   - lambda:*
                   - iam:*
@@ -192,7 +193,7 @@ Resources:
                 Version: 1
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: !Sub ${AWS::StackName}-BuildStatusEventHandler
+                StackName: !Sub ${AWS::StackName}-buildStatusEventHandler
                 TemplatePath: statusEventHandler::deployStatusEventHandler.yml
                 Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
                 RoleArn: !GetAtt BuildStatusEventHandlerDeployRole.Arn

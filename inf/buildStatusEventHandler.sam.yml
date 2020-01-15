@@ -23,7 +23,9 @@ Resources:
           Type: 'EventBridgeRule'
           Properties:
             Pattern:
-              detail-type: 'CodeBuild Build State Change'
+              detail-type:
+                - 'CodeBuild Build State Change'
+                
       Environment:
         Variables:
           BUCKET: !Sub ${Bucket}/${Key}
