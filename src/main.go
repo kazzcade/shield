@@ -23,10 +23,12 @@ type BuildDetail struct {
 
 func init() {
 	log.SetReportCaller(true)
+	log.SetLevel(log.TraceLevel)
 }
 
 //HandleRequest handle she change for a given codebuild alarm
 func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
+	log.Trace("Starting handler")
 	buildDetail := BuildDetail{}
 	if err := json.Unmarshal(event.Detail, &buildDetail); err != nil {
 		log.Errorf("Unable to unmarshal event details %v", err)
@@ -65,7 +67,7 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 		log.Errorf("Error waiting for item %s to be copied to %s %v", source, destination, copyWaitErr)
 		return fmt.Errorf("Error waiting for item %s to be copied to %s %w", source, destination, copyWaitErr)
 	}
-
+	log.Trace("Ending Handler")
 	return nil
 }
 
