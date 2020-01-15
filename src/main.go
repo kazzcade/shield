@@ -37,6 +37,8 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 
 	bucket := os.Getenv("BUCKET")
 
+	log.Debug("bucket is %s", bucket)
+
 	if len(bucket) <= 0 {
 		log.Errorf("Unable to update project %s with a status of %s, Please set BUCKET environment variable", buildDetail.Name, buildDetail.Status)
 		return fmt.Errorf("Unable to update project %s with a status of %s, Please set BUCKET environment variable", buildDetail.Name, buildDetail.Status)
