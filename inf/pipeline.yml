@@ -181,27 +181,28 @@ Resources:
                 - Name: source
               OutputArtifacts:
                 - Name: statusEventHandler
-        # - Name: Deploy
-        #   Actions:
-        #     - Name: BuildStatusEventHandler
-        #       RunOrder: 1
-        #       ActionTypeId:
-        #         Category: Deploy
-        #         Owner: AWS
-        #         Provider: CloudFormation
-        #         Version: 1
-        #       Configuration:
-        #         Action: CREATE_UPDATE
-        #         StackName: !Sub ${AWS::StackName}-StatusEventHandler
-        #         Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
-        #         RoleArn: !GetAtt BuildStatusEventHandlerDeployRole.Arn
-        #         ParameterOverrides: 
-        #           Fn::Sub:
-        #             - '{"Bucket":"${Bucket}", "Key": "${Key}"}'
-        #             - Bucket: !Ref BucketName
-        #               Key: !Ref ShieldKey
-        #       InputArtifacts:
-        #         - Name: statusEventHandler
+        - Name: Deploy
+          Actions:
+            - Name: BuildStatusEventHandler
+              RunOrder: 1
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub ${AWS::StackName}-BuildStatusEventHandler
+                TemplatePath: statusEventHandler::deployStatusEventHandler.yml
+                Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
+                RoleArn: !GetAtt BuildStatusEventHandlerDeployRole.Arn
+                ParameterOverrides: 
+                  Fn::Sub:
+                    - '{"Bucket":"${Bucket}", "Key": "${Key}"}'
+                    - Bucket: !Ref BucketName
+                      Key: !Ref ShieldKey
+              InputArtifacts:
+                - Name: statusEventHandler
         #     - Name: BuildStatusAssets
         #       RunOrder: 1
         #       ActionTypeId:
