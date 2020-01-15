@@ -23,6 +23,8 @@ Resources:
           Type: 'EventBridgeRule'
           Properties:
             Pattern:
+              source:
+                - 'aws.codebuild'
               detail-type:
                 - 'CodeBuild Build State Change'
                 
