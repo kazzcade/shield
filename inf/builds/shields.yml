@@ -1,0 +1,10 @@
+version: 0.2
+
+artifacts:
+  files:
+    - shields/FAILED.svg
+    - shields/FAULT.svg
+    - shields/IN_PROGRESS.svg
+    - shields/STOPPED.svg
+    - shields/SUCCEEDED.svg
+    - shields/TIMED_OUT.svg
