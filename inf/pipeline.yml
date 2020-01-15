@@ -107,35 +107,35 @@ Resources:
                   - ${Bucket}/*
                   - { Bucket: !GetAtt Bucket.Arn }
 
-      ShieldBuildRole:
-        Type: AWS::IAM::Role
-        Properties:
-          RoleName: !Sub ${AWS::StackName}-ShieldBuildRole
-          AssumeRolePolicyDocument:
+  ShieldBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-ShieldBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-ShieldBuildProfile
+          PolicyDocument:
             Version: 2012-10-17
             Statement:
-              Effect: Allow
-              Principal:
-                Service:
-                  - codebuild.amazonaws.com
-              Action:
-                - sts:AssumeRole
-          Policies:
-            - PolicyName: !Sub ${AWS::StackName}-ShieldBuildProfile
-              PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                  - Effect: Allow
-                    Action:
-                      - codebuild:*
-                      - logs:*
-                    Resource: "*"
-                  - Effect: Allow
-                    Action:
-                      - s3:*
-                    Resource: !Sub
-                      - ${Bucket}/*
-                      - { Bucket: !GetAtt Bucket.Arn }
+              - Effect: Allow
+                Action:
+                  - codebuild:*
+                  - logs:*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: !Sub
+                  - ${Bucket}/*
+                  - { Bucket: !GetAtt Bucket.Arn }
 
   BuildStatusEventHandlerDeployRole:
     Type: AWS::IAM::Role
@@ -282,7 +282,7 @@ Resources:
         Type: CODEPIPELINE
         BuildSpec: inf/builds/buildStatusEventHandler.yml
 
-  ShieldsCodeBuild:
+  Shields:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Sub ${AWS::StackName}-Shields
@@ -296,7 +296,7 @@ Resources:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: inf/builds/shield.yml
+        BuildSpec: inf/builds/shields.yml
 
   # Setup the webhook to keep track of changes
   PipelineWebHook:
