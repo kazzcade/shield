@@ -31,3 +31,4 @@ Resources:
       Environment:
         Variables:
           BUCKET: !Sub ${Bucket}/${Key}
+          AWS_SDK_LOAD_CONFIG: true
