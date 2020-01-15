@@ -8,8 +8,6 @@ Parameters:
     Type: String
   GitSecret:
     Type: String
-  GitToken:
-    Type: String
   GitOwner:
     Type: String
   BucketName:
@@ -139,7 +137,7 @@ Resources:
                 Resource: !Sub
                   - ${Bucket}/*
                   - { Bucket: !GetAtt Bucket.Arn }
-
+  
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:
@@ -164,7 +162,7 @@ Resources:
                 Owner: !Ref GitOwner
                 Repo: !Ref GitRepo
                 Branch: !Ref GitBranch
-                OAuthToken: !Ref GitToken
+                OAuthToken: !Join ['', ['{{resolve:secretsmanager:', 'github-read-repo-package-read-write', ':SecretString:token}}' ]]
                 PollForSourceChanges: false
               OutputArtifacts:
               - Name: source
@@ -237,7 +235,6 @@ Resources:
       Source:
         Type: CODEPIPELINE
         BuildSpec: inf/builds/buildStatusEventHandler.yml
-
 
   # Setup the webhook to keep track of changes
   PipelineWebHook:

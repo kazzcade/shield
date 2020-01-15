@@ -12,7 +12,6 @@ for filename in ./*.yml; do
     fi
 done
 
-GitToken="12f2e2c1d49fd5197045dbbb5749c1b808351451"
 GitSecret=$(echo -n "value" | openssl sha1 -hmac "key" | awk '{print $2}')
 GitBranch=`git branch | grep \* | cut -d ' ' -f2`
 GitRepo=`git rev-parse --show-toplevel | rev | cut -d/ -f1 | rev`
@@ -48,6 +47,5 @@ BucketName=$Bucket \
 GitRepo=$GitRepo \
 GitBranch=$GitBranch \
 GitSecret=$GitSecret \
-GitToken=$GitToken \
 BuildStackName=$BuildStackName \
 GitOwner=$GitOwner \
