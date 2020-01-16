@@ -10,8 +10,6 @@ phases:
       golang: 1.13
   build:
     commands:
-      - export GOARCH=amd64
-      - export GOOS=linux
       - make build
   post_build:
     commands:
