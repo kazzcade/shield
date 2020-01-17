@@ -11,7 +11,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: go1.x
-      Handler: cloudWatchBuildEvent
+      Handler: handler
       CodeUri: ../bin
       MemorySize: 128
       Timeout: 30
@@ -30,5 +30,6 @@ Resources:
                 
       Environment:
         Variables:
-          BUCKET: !Sub ${Bucket}/${Key}
+          BUCKET: !Ref Bucket
+          KEY: !Ref Key
           AWS_SDK_LOAD_CONFIG: true

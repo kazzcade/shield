@@ -36,6 +36,7 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 	}
 
 	bucket := os.Getenv("BUCKET")
+	key := os.Getenv("KEY")
 
 	log.Debug("bucket is %s", bucket)
 
@@ -44,8 +45,8 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 		return fmt.Errorf("Unable to update project %s with a status of %s, Please set BUCKET environment variable", buildDetail.Name, buildDetail.Status)
 	}
 
-	source := fmt.Sprint("%s/%s.svg", bucket, buildDetail.Status)
-	destination := fmt.Sprintf("%s/%s/STATUS.svg", bucket, buildDetail.Name)
+	source := fmt.Sprintf(`%s/%s.svg`, key, buildDetail.Status)
+	destination := fmt.Sprintf(`%s/%s/STATUS.svg`, key, buildDetail.Name)
 
 	sess, sessErr := session.NewSession()
 
