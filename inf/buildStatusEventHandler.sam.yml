@@ -5,25 +5,38 @@ Parameters:
     Type: String
   Key:
     Type: String
-    Default: shield
+    Default: shields
 Resources:
-  SyncRecords:
+  SetShield:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: go1.x
-      Handler: cloudWatchBuildEvent
-      CodeUri: bin
+      Handler: handler
+      CodeUri: ../bin
       MemorySize: 128
       Timeout: 30
       Policies:
-        - S3ReadPolicy:
+        - S3CrudPolicy:
             BucketName: !Ref Bucket
       Events:
         BuildStatus:
           Type: 'EventBridgeRule'
           Properties:
             Pattern:
-              detail-type: 'CodeBuild Build State Change'
+              source:
+                - 'aws.codebuild'
+              detail-type:
+                - 'CodeBuild Build State Change'
+              detail:
+                build-status:
+                  - IN_PROGRESS
+                  - SUCCEEDED
+                  - FAILED
+                  - STOPPED
+                  - TIMED_OUT
+                  - FAULT
       Environment:
         Variables:
-          BUCKET: !Sub ${Bucket}/${Key}
+          BUCKET: !Ref Bucket
+          KEY: !Ref Key
+          AWS_SDK_LOAD_CONFIG: true

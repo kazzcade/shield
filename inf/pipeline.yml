@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: SFSync pipeline
+Description: code build shield pipeline
 
 Parameters:
   GitRepo:
@@ -8,15 +8,11 @@ Parameters:
     Type: String
   GitSecret:
     Type: String
-  GitToken:
-    Type: String
   GitOwner:
     Type: String
   BucketName:
     Type: String
-  ShieldKey:
-    Type: String
-    Default: shield
+    Default: artifacts
 # Setup s3 Bucket where we keep our source
 Resources:
   Bucket:
@@ -29,13 +25,20 @@ Resources:
     Type: AWS::S3::BucketPolicy
     Properties: 
       Bucket: !Ref Bucket
-      PolicyDocument: 
+      PolicyDocument:
         Statement:
-          - Effect: Allow
-        Action:
-          - s3:GetObject
-        Resource: !Sub ${Bucket}/shields/*
-
+          - Action: 
+            - "s3:GetObject"
+            Effect: "Allow"
+            Resource: 
+              Fn::Join: 
+                - ""
+                - 
+                  - "arn:aws:s3:::"
+                  - 
+                    Ref: Bucket
+                  - "/shields/*"
+            Principal: "*"
   # role that executes the pipeline process
   PipelineRole:
     Type: AWS::IAM::Role
@@ -92,6 +95,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - codebuild:*
+                  - logs:*
                 Resource: "*"
               - Effect: Allow
                 Action:
@@ -100,7 +104,37 @@ Resources:
                   - ${Bucket}/*
                   - { Bucket: !GetAtt Bucket.Arn }
 
-  BuildStatusEventHandlerDeploy:
+  ShieldBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${AWS::StackName}-ShieldBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codebuild.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${AWS::StackName}-ShieldBuildProfile
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - codebuild:*
+                  - logs:*
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource: !Sub
+                  - ${Bucket}/*
+                  - { Bucket: !GetAtt Bucket.Arn }
+
+  BuildStatusEventHandlerDeployRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub ${AWS::StackName}-BuildStatusEventHandlerDeployRole
@@ -120,10 +154,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - coudformation:*
+                  - cloudformation:*
                   - logs:*
                   - lambda:*
                   - iam:*
+                  - events:*
                 Resource: "*"
               - Effect: Allow
                 Action:
@@ -138,9 +173,9 @@ Resources:
       Name: !Sub ${AWS::StackName}
       RestartExecutionOnUpdate: true
       RoleArn: !GetAtt PipelineRole.Arn
-      ArtifactBucket:
+      ArtifactStore:
         Type: S3
-        Location: !Ref BucketName
+        Location: !Ref Bucket
       # Get the source
       Stages:
         - Name: Source
@@ -156,7 +191,7 @@ Resources:
                 Owner: !Ref GitOwner
                 Repo: !Ref GitRepo
                 Branch: !Ref GitBranch
-                OAuthToken: !Ref GitToken
+                OAuthToken: !Join ['', ['{{resolve:secretsmanager:', 'github-read-repo-package-read-write', ':SecretString:token}}' ]]
                 PollForSourceChanges: false
               OutputArtifacts:
               - Name: source
@@ -170,11 +205,24 @@ Resources:
                 Provider: CodeBuild
                 Version: 1
               Configuration:
-                ProjectName: !Ref BuildStatusEventHandler
-              InputArtifact:
+                ProjectName: !Ref BuildStatusEventHandlerCodeBuild
+              InputArtifacts:
                 - Name: source
-              OutputArtifact:
+              OutputArtifacts:
                 - Name: statusEventHandler
+            - Name: Shields
+              RunOrder: 1
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref Shields
+              InputArtifacts:
+                - Name: source
+              OutputArtifacts:
+                - Name: shields
         - Name: Deploy
           Actions:
             - Name: BuildStatusEventHandler
@@ -185,18 +233,18 @@ Resources:
                 Provider: CloudFormation
                 Version: 1
               Configuration:
-                Action: CREATE_UPDATE
-                StackName: !Sub ${AWS::StackName}-StatusEventHandler
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub ${AWS::StackName}-buildStatusEventHandler
+                TemplatePath: statusEventHandler::deployStatusEventHandler.yml
                 Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
-                RoleArn: !GetAtt BuildStatusEventHandlerDeploy.Arn
+                RoleArn: !GetAtt BuildStatusEventHandlerDeployRole.Arn
                 ParameterOverrides: 
                   Fn::Sub:
-                    - '{"Bucket":"${LogLevel}", "Key": "${Key}"}'
-                    - Bucket: !Ref BucketName
-                      Key: !Ref ShieldKey
+                    - '{"Bucket":"${Bucket}", "Key": "shields"}'
+                    - Bucket: !Ref Bucket
               InputArtifacts:
                 - Name: statusEventHandler
-            - Name: BuildStatusAssets
+            - Name: Shields
               RunOrder: 1
               ActionTypeId:
                 Category: Deploy
@@ -204,15 +252,12 @@ Resources:
                 Provider: S3
                 Version: 1
               Configuration:
-                S3Bucket: !Ref Bucket
-                Extract: false
-                ObjectKey: ShieldKey
-
-
+                BucketName: !Ref Bucket
+                Extract: true
               InputArtifacts:
-                - Name: source::shields
+                - Name: shields
 
-  BuildStatusEventHandler:
+  BuildStatusEventHandlerCodeBuild:
     Type: AWS::CodeBuild::Project
     Properties:
       Name: !Sub ${AWS::StackName}-BuildStatusEventHandler
@@ -230,8 +275,23 @@ Resources:
         Type: CODEPIPELINE
       Source:
         Type: CODEPIPELINE
-        BuildSpec: inf/builds/BuildStatusEventHandler.yml
+        BuildSpec: inf/builds/buildStatusEventHandler.yml
 
+  Shields:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}-Shields
+      Description: Package build shields
+      ServiceRole: !GetAtt ShieldBuildRole.Arn
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:2.0
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: inf/builds/shields.yml
 
   # Setup the webhook to keep track of changes
   PipelineWebHook:

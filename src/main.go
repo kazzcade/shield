@@ -28,13 +28,14 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 	}
 
 	bucket := os.Getenv("BUCKET")
+	key := os.Getenv("KEY")
 
 	if len(bucket) <= 0 {
 		return fmt.Errorf("Unable to update project %s with a status of %s, Please set BUCKET environment variable", buildDetail.Name, buildDetail.Status)
 	}
 
-	source := fmt.Sprint("%s/%s.svg", bucket, buildDetail.Status)
-	destination := fmt.Sprintf("%s/%s/STATUS.svg", bucket, buildDetail.Name)
+	source := fmt.Sprintf(`%s/%s/%s.svg`,bucket, key, buildDetail.Status)
+	destination := fmt.Sprintf(`%s/%s/STATUS.svg`, key, buildDetail.Name)
 
 	sess, sessErr := session.NewSession()
 
@@ -51,11 +52,10 @@ func HandleRequest(ctx context.Context, event events.CloudWatchEvent) error {
 	}
 
 	// Wait to see if the item got copied
-	copyWaitErr := svc.WaitUntilObjectExists(&s3.HeadObjectInput{Bucket: aws.String(source), Key: aws.String(destination)})
+	copyWaitErr := svc.WaitUntilObjectExists(&s3.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(destination)})
 	if copyWaitErr != nil {
 		return fmt.Errorf("Error waiting for item %s to be copied to %s %w", source, destination, copyWaitErr)
 	}
-
 	return nil
 }
 
