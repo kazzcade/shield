@@ -241,7 +241,7 @@ Resources:
                 ParameterOverrides: 
                   Fn::Sub:
                     - '{"Bucket":"${Bucket}", "Key": "shields"}'
-                    - Bucket: !Ref BucketName
+                    - Bucket: !Ref Bucket
               InputArtifacts:
                 - Name: statusEventHandler
             - Name: Shields
