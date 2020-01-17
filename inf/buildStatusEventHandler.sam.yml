@@ -27,7 +27,14 @@ Resources:
                 - 'aws.codebuild'
               detail-type:
                 - 'CodeBuild Build State Change'
-                
+              detail:
+                build-status:
+                  - IN_PROGRESS
+                  - SUCCEEDED
+                  - FAILED
+                  - STOPPED
+                  - TIMED_OUT
+                  - FAULT
       Environment:
         Variables:
           BUCKET: !Ref Bucket
