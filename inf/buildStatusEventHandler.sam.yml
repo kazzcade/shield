@@ -16,7 +16,7 @@ Resources:
       MemorySize: 128
       Timeout: 30
       Policies:
-        - S3ReadPolicy:
+        - S3CrudPolicy:
             BucketName: !Ref Bucket
       Events:
         BuildStatus:
